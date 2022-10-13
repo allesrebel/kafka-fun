@@ -1,0 +1,14 @@
+{
+  "name": "kafka-hw",
+  "version": "1.0.0",
+  "description": "midterm1",
+  "main": "entry.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "kafkajs": "^2.2.0"
+  }
+}
