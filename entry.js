@@ -5,33 +5,49 @@ const kafka = new Kafka({
 	brokers: ['localhost:9092']
 })
 
-const main = async function()
+// really should be something like 6000 (slightly higher than 1 heartbeat)
+const warning_signal_msts = 3;
+// a variable to keep track of last heartbeat timestamp
+var last_heartbeat_msts = 0;
+
+// timer handler for missing hearbeats
+const missingHbHandler = async function()
 {
-	const producer = kafka.producer()
+	console.log("Oh no!! Missed a heartbeat");
+}
 
-	await producer.connect()
-	await producer.send({
-	  topic: 'test-topic',
-	  messages: [
-	    { value: 'Hello KafkaJS user!' },
-	  ],
-	})
+// start a oneshot resetable timer for the warning
+// Should be warning_signal_msts/1000! but changed for demo
+const oneshot_timer_hdl = setTimeout(missingHbHandler, 6000);
 
-	producer.disconnect();
+const heartbeatCheck = async function(e)
+{
+	console.log(JSON.stringify(e)); // for demo
+	const this_heartbeat_msts = e.timestamp;
+	oneshot_timer_hdl.refresh() // reset the timer
 
+	// exit early if we don't have a previous heartbeat
+	if( last_heartbeat_msts === 0 )
+	{
+		last_heartbeat_msts = this_heartbeat_msts;
+		return;
+	}
 
-	const consumer = kafka.consumer({ groupId: 'test-group' })
+	// compare delta between heartbeats
+	if( this_heartbeat_msts - last_heartbeat_msts > warning_signal_msts )
+		console.log("Oh no!!! Heartbeat took longer than expected");
+}
 
-	await consumer.connect()
-	await consumer.subscribe({ topic: 'test-topic', fromBeginning: true })
+const runManager = async function()
+{
+	const consumer = kafka.consumer({ groupId: 'test-group' });
+	await consumer.connect();
 
-	await consumer.run({
-		  eachMessage: async ({ topic, partition, message }) => {
-			      console.log({
-					    value: message.value.toString(),
-					  })
-			    },
-	})
+	// listen to our own heartbeat
+	const { HEARTBEAT } = consumer.events;
+	const removeHeartbeatListener = consumer.on(HEARTBEAT, heartbeatCheck);
+
+	await consumer.run(); // will start Consumer runnable under the hood
 };
 
-main();
+runManager();
