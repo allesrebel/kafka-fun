@@ -13,7 +13,7 @@ const main = async function()
 	await producer.send({
 	  topic: 'test-topic',
 	  messages: [
-	    { value: 'Hello KafkaJS user!' },
+	    { value: 'Hello KafkaJS users!' },
 	  ],
 	})
 

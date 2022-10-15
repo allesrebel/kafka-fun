@@ -7,7 +7,7 @@ const kafka = new Kafka({
 
 const main = async function()
 {
-	const consumer = kafka.consumer({ groupId: 'group1' })
+	const consumer = kafka.consumer({ groupId: 'group2' })
 
 	await consumer.connect()
 	await consumer.subscribe({ topic: 'test-topic', fromBeginning: true })
